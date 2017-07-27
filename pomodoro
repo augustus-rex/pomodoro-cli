@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+
+scriptname=$(basename "$0")
+
+Help () {
+	# Display help text and exit.
+	cat <<- EOF
+	usage: $scriptname [-h] [-b] [-a] [-s] [-S] [-L] [-C] [DURATION]
+
+	positional arguments
+	  DURATION	duration of timer in minutes
+
+	optional arguments:
+	  -h		show this help message and exit
+	  -b		set timer to break mode. Default break duration is 5 minutes
+	  -s		play ticking and alarm sounds
+	  -a		play only alarm sound
+	  -S 		set DURATION in seconds instead of minutes
+	  -L		show pomodoro log
+	  -C		clear pomodoro log
+	EOF
+
+	exit
+}
+
+logfile="$HOME/.pomodoro.log"
+activity="pomodoro"
+message="Break time!"
+duration=1500
+
+# Set program options
+while getopts "hbasSLC" opt; do
+	case $opt in
+		h)	Help 
+			;;
+		b)	breaks=1
+			activity="break"
+			message="Break is over. Get back to work!"
+			duration=300
+			;;
+		a)	alarm=1
+			;;
+		s) 	sound=1
+			;;
+		S)	seconds=1
+			;;
+		L)	cat $logfile
+			exit
+			;;
+		C)	echo -n > $logfile
+			exit
+			;;
+	esac
+done
+[[ $OPTIND -gt 1 ]] && shift
+
+Log () {
+	# Append entry to logfile
+	echo "$(date "+%Y-%m-%d %H:%M:%S"), $1" >> ${logfile}
+}
+
+CancelActivity () {
+	Log "$activity cancelled"
+
+	# Kill ticking noise if playing
+	if [[ "$sound" = 1 ]]; then
+		kill $ticking_pid && killall paplay
+	fi
+
+	exit 1
+}
+
+# Set custom duration if given
+if [[ ! -z "$1" && ! "$seconds" = 1 ]];then
+	duration=$(($1*60))
+elif [[ ! -z "$1" && "$seconds" = 1 ]];then
+	duration=$1
+fi
+
+# Start the ticking noise
+if [[ "$sound" = 1 ]]; then
+	./loop_ticking.sh &
+	ticking_pid=$!
+	echo $ticking_pid
+fi
+
+trap "CancelActivity" SIGINT SIGTERM SIGHUP
+
+Log "$activity started"
+
+# Start countdown timer
+date1=$((`date +%s` + $duration)); 
+while [ "$date1" -ge `date +%s` ]; do 
+    echo -ne "$(date -u --date @$(($date1 - `date +%s`)) +%H:%M:%S)\r";
+    sleep 0.1
+done
+
+Log "$activity finished"
+
+# Play alarm sound
+if [[ "$sound" = 1 || "$alarm" = 1 ]]; then
+	# Kill ticking noise if playing
+	if [[ "$sound" = 1 ]]; then
+		kill $ticking_pid && killall paplay
+	fi
+
+	paplay ./sounds/pomodoroclock_alarm.ogg &
+fi
+
+notify-send --urgency=critical --expire-time=100000 Pomodoro "$message"
