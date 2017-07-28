@@ -27,6 +27,7 @@ logfile="$HOME/.pomodoro.log"
 activity="pomodoro"
 message="Break time!"
 duration=1500
+script_dir="$(dirname "$(readlink -f "$0")")"
 
 # Set program options
 while getopts "hbasSLC" opt; do
@@ -78,7 +79,7 @@ fi
 
 # Start the ticking noise
 if [[ "$sound" = 1 ]]; then
-	./loop_ticking.sh &
+	$script_dir/loop_ticking_sound.sh &
 	ticking_pid=$!
 fi
 
@@ -102,7 +103,7 @@ if [[ "$sound" = 1 || "$alarm" = 1 ]]; then
 		kill $ticking_pid && killall paplay
 	fi
 
-	paplay ./sounds/pomodoroclock_alarm.ogg &
+	paplay $script_dir/sounds/pomodoroclock_alarm.ogg &
 fi
 
 notify-send --urgency=critical --expire-time=100000 Pomodoro "$message"
