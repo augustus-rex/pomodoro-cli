@@ -33,8 +33,7 @@ while getopts "hbasSLC" opt; do
 	case $opt in
 		h)	Help 
 			;;
-		b)	breaks=1
-			activity="break"
+		b)	activity="break"
 			message="Break is over. Get back to work!"
 			duration=300
 			;;
@@ -81,7 +80,6 @@ fi
 if [[ "$sound" = 1 ]]; then
 	./loop_ticking.sh &
 	ticking_pid=$!
-	echo $ticking_pid
 fi
 
 trap "CancelActivity" SIGINT SIGTERM SIGHUP
