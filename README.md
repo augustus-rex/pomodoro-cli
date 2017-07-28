@@ -1,7 +1,7 @@
 # Pomodoro shell script
 
-A pomodoro timer shell script. Some of the features of the script
-includes:
+A pomodoro timer for the UNIX command line. Some of the features
+of the script includes:
 
 * Displays a countdown timer while running
 * Plays pomodoro-clock sounds, both ticking and alarm sounds
